@@ -69,7 +69,19 @@ dependencies = [
 
 [[package]]
 name = "timeflake-rs"
+version = "0.2.0"
+dependencies = [
+ "custom_error",
+ "rand",
+ "timeflake-rs 0.2.3",
+ "uuid",
+]
+
+[[package]]
+name = "timeflake-rs"
 version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b96ae3bfa56d399cc292e4271519627323604fded9081e9bc27a446046c3382"
 dependencies = [
  "custom_error",
  "rand",
