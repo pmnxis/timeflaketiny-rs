@@ -12,13 +12,13 @@ mod error;
 
 use error::TimeflakeError;
 
-pub struct Timeflake {
+pub struct TimeflakeTiny {
     pub timestamp: Duration,
-    pub random: u128,
+    pub random: u16,
 }
 
-impl Timeflake {
-    pub fn parse(data: &str) -> Result<Timeflake, TimeflakeError> {
+impl TimeflakeTiny {
+    pub fn parse(data: &str) -> Result<TimeflakeTiny, TimeflakeError> {
         // currently only support uuid-format of timeflake. Sorry!
         let uuid = match Uuid::from_str(data) {
             Ok(x) => Ok(x),
@@ -33,12 +33,13 @@ impl Timeflake {
                 .try_into()
                 .unwrap(),
         );
-        let random = flake & 0x000000000000FFFFFFFFFFFFFFFFFFFF;
+
+        let random = (flake & 0xFFFF) as u16;
 
         Ok(Self { timestamp, random })
     }
 
-    pub fn random() -> Result<Timeflake, TimeflakeError> {
+    pub fn random() -> Result<TimeflakeTiny, TimeflakeError> {
         let time = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(x) => x,
             Err(e) => return Err(TimeflakeError::SystemTimeError { msg: e.to_string() }),
@@ -47,56 +48,30 @@ impl Timeflake {
         Self::from_values(time, None)
     }
 
-    #[cfg(all(
-        feature = "std",
-        not(target_arch = "wasm32"),
-        not(target_arch = "asmjs")
-    ))]
     pub fn from_values(
         timestamp: Duration,
-        random_val: Option<u128>,
-    ) -> Result<Timeflake, TimeflakeError> {
+        random_val: Option<u16>,
+    ) -> Result<TimeflakeTiny, TimeflakeError> {
         let random = match random_val {
             Some(x) => x,
-            None => thread_rng().gen::<u128>(),
+            None => thread_rng().gen::<u16>(),
         };
 
         Ok(Self { timestamp, random })
     }
 
-    #[cfg(any(not(feature = "std"), target_arch = "wasm32", target_arch = "asmjs"))]
-    pub fn from_values(
-        timestamp: Duration,
-        random_val: Option<u128>,
-    ) -> Result<Timeflake, TimeflakeError> {
-        let random = match random_val {
-            Some(x) => x,
-            None => {
-                let mut val = [0u8; 16];
-                match thread_rng().try_fill(&mut val[..10]) {
-                    Ok(_) => {}
-                    Err(e) => return Err(TimeflakeError::RNGError { msg: e.to_string() }),
-                }
-
-                u128::from_le_bytes(val)
-            }
-        };
-
-        Ok(Self { timestamp, random })
-    }
-
-    pub fn as_u128(&self) -> u128 {
-        let timeflake = self.random & 0x000000000000FFFFFFFFFFFFFFFFFFFF;
-        let timestamp_part = self.timestamp.as_millis() as u64;
-        timeflake | (timestamp_part as u128) << 80
+    pub fn as_u64(&self) -> u64 {
+        self.random as u64 | (self.timestamp.as_millis() as u64) << 16
     }
 
     pub fn get_uuid(&self) -> Uuid {
-        Uuid::from_u128(self.as_u128())
+        let stretched: u128 = self.timestamp.as_millis() << 80 | self.random as u128;
+
+        Uuid::from_u128(stretched)
     }
 }
 
-impl fmt::Display for Timeflake {
+impl fmt::Display for TimeflakeTiny {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_uuid())
     }
@@ -104,11 +79,14 @@ impl fmt::Display for Timeflake {
 
 #[test]
 fn parse_test() {
-    let flake = Timeflake::from_values(Duration::from_millis(424242), Some(242424)).unwrap();
-    let flake2 = Timeflake::parse(&flake.to_string()).unwrap();
+    let some_time = 123456;
+    let some_rand = 17890;
+    let flake =
+        TimeflakeTiny::from_values(Duration::from_millis(some_time), Some(some_rand)).unwrap();
+    let flake2 = TimeflakeTiny::parse(&flake.to_string()).unwrap();
 
-    assert_eq!(flake.timestamp.as_millis(), 424242);
-    assert_eq!(flake.random, 242424);
+    assert_eq!(flake.timestamp.as_millis() as u64, some_time);
+    assert_eq!(flake.random, some_rand);
     assert_eq!(flake.timestamp, flake2.timestamp);
     assert_eq!(flake.random, flake2.random);
 }
@@ -116,8 +94,8 @@ fn parse_test() {
 #[test]
 fn example() {
     let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    println!("{}", Timeflake::random().unwrap());
-    println!("{}", Timeflake::from_values(time, Some(0)).unwrap());
-    println!("{}", Timeflake::from_values(time, None).unwrap());
-    println!("{}", Timeflake::from_values(time, None).unwrap());
+    println!("{}", TimeflakeTiny::random().unwrap());
+    println!("{}", TimeflakeTiny::from_values(time, Some(0)).unwrap());
+    println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
+    println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
 }
