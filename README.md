@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2022 perillamint
+SPDX-FileCopyrightText: 2022 perillamint & pmnxis
 
 SPDX-License-Identifier: CC0-1.0
 -->
@@ -9,18 +9,39 @@ SPDX-License-Identifier: CC0-1.0
 [![crates.io](https://img.shields.io/crates/v/timeflake-rs.svg)](https://crates.io/crates/timeflake-rs)
 [![License](https://img.shields.io/github/license/perillamint/timeflake-rs)](https://github.com/perillamint/timeflake-rs/blob/master/LICENSES/MIT.txt)
 
-Timeflake is a 128-bit, roughly-ordered, URL-safe UUID. Inspired by Twitter's Snowflake, Instagram's ID and Firebase's PushID.
-
-Port of [https://github.com/anthonynsimon/timeflake](https://github.com/anthonynsimon/timeflake) in pure Rust
+Timeflake Tiny is a 64-bit sized timebased unique, roughly-ordered and compatible with sqlite. Inspired by original library [timeflake-rs](https://github.com/perillamint/timeflake-rs) that is 128-bit sized.
 
 # Example code
-```
-use Timeflake;
+```rs
+use TimeflakeTiny;
 
 fn main() {
     let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    println!("{}", Timeflake::random().unwrap());
-    println!("{}", Timeflake::from_values(time, Some(0)).unwrap());
-    println!("{}", Timeflake::from_values(time, None).unwrap());
+
+    // Generate from current time and random generated value.
+    println!("{}", TimeflakeTiny::random().unwrap());
+
+    // Generate from specific time and some value.
+    println!("{}", TimeflakeTiny::from_values(time, Some(0)).unwrap());
+
+    // When seconds parameter is `None`, the module fill with random automatically.
+    println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
+
+    let tiny = TimeflakeTiny::from_values(Duration::from_millis(SOME_TIME), Some(SOME_RAND)).unwrap();
+    let huge = Timeflake::from_values(Duration::from_millis(SOME_TIME), Some(SOME_RAND as u128)).unwrap();
+
+    // Would be same uuid between timeflake and timeflake tiny
+    // when both value is less than U16 MAX.
+    assert_eq!(huge.get_uuid(), tiny.get_uuid());
+
+    // The tiny module support the original type conversion.
+    let huge_from_tiny = TimeflakeTiny::to_timeflake(&tiny).unwrap();
+    let reverted = TimeflakeTiny::from_timeflake(&huge_from_tiny).unwrap();
+
+    assert_eq!(huge.get_uuid(), huge_from_tiny.get_uuid());
+
+    // TimeflakeTiny -> Timeflake -> TimeflakeTiny
+    // Should be same value at above case. 
+    assert_eq!(tiny.get_uuid(), reverted.get_uuid());
 }
 ```
