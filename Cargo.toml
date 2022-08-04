@@ -1,9 +1,9 @@
 [package]
-name = "timeflake-rs"
-version = "0.2.4"
+name = "timeflaketiny-rs"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "Timeflake is a 128-bit, roughly-ordered, URL-safe UUID. Inspired by Twitter's Snowflake, Instagram's ID and Firebase's PushID."
+description = "TimeflakeTiny is 64-bit sized timebased unique, roughly-ordered and compatible with sqlite. Inspired by original Timeflake that is 128-bit sized."
 repository = "https://github.com/perillamint/timeflake-rs"
 keywords = ["timeflake"]
 
@@ -13,3 +13,4 @@ keywords = ["timeflake"]
 uuid = "1.1"
 rand = "0.8"
 custom_error = "1.9"
+timeflake-rs = "0.2.4"
