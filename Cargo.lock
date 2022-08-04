@@ -80,7 +80,7 @@ dependencies = [
 
 [[package]]
 name = "timeflaketiny-rs"
-version = "0.2.2"
+version = "0.2.0"
 dependencies = [
  "custom_error",
  "rand",
