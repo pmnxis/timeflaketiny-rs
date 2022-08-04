@@ -6,11 +6,9 @@ use core::fmt;
 use core::str::FromStr;
 use rand::{thread_rng, Rng};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use timeflake_rs::error::TimeflakeError;
+use timeflake_rs::Timeflake;
 use uuid::Uuid;
-
-pub mod error;
-
-use error::TimeflakeError;
 
 pub struct TimeflakeTiny {
     pub timestamp: Duration,
@@ -69,6 +67,14 @@ impl TimeflakeTiny {
 
         Uuid::from_u128(stretched)
     }
+
+    pub fn to_timeflake(&self) -> Result<Timeflake, TimeflakeError> {
+        Timeflake::from_values(self.timestamp, Some(self.random as u128))
+    }
+
+    pub fn from_timeflake(data: &Timeflake) -> Result<TimeflakeTiny, TimeflakeError> {
+        TimeflakeTiny::from_values(data.timestamp, Some(data.random as u16))
+    }
 }
 
 impl fmt::Display for TimeflakeTiny {
@@ -77,25 +83,52 @@ impl fmt::Display for TimeflakeTiny {
     }
 }
 
-#[test]
-fn parse_test() {
-    let some_time = 123456;
-    let some_rand = 17890;
-    let flake =
-        TimeflakeTiny::from_values(Duration::from_millis(some_time), Some(some_rand)).unwrap();
-    let flake2 = TimeflakeTiny::parse(&flake.to_string()).unwrap();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const SOME_TIME: u64 = 123456;
+    const SOME_RAND: u16 = 17890;
 
-    assert_eq!(flake.timestamp.as_millis() as u64, some_time);
-    assert_eq!(flake.random, some_rand);
-    assert_eq!(flake.timestamp, flake2.timestamp);
-    assert_eq!(flake.random, flake2.random);
-}
+    #[test]
+    fn parse_test() {
+        let flake =
+            TimeflakeTiny::from_values(Duration::from_millis(SOME_TIME), Some(SOME_RAND)).unwrap();
+        let flake2 = TimeflakeTiny::parse(&flake.to_string()).unwrap();
 
-#[test]
-fn example() {
-    let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    println!("{}", TimeflakeTiny::random().unwrap());
-    println!("{}", TimeflakeTiny::from_values(time, Some(0)).unwrap());
-    println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
-    println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
+        assert_eq!(flake.timestamp.as_millis() as u64, SOME_TIME);
+        assert_eq!(flake.random, SOME_RAND);
+        assert_eq!(flake.timestamp, flake2.timestamp);
+        assert_eq!(flake.random, flake2.random);
+    }
+
+    #[test]
+    fn convert_to_timeflake_than_revert() {
+        let tiny =
+            TimeflakeTiny::from_values(Duration::from_millis(SOME_TIME), Some(SOME_RAND)).unwrap();
+        let huge =
+            Timeflake::from_values(Duration::from_millis(SOME_TIME), Some(SOME_RAND as u128))
+                .unwrap();
+
+        let huge_from_tiny = TimeflakeTiny::to_timeflake(&tiny).unwrap();
+        let reverted = TimeflakeTiny::from_timeflake(&huge_from_tiny).unwrap();
+
+        assert_eq!(huge.get_uuid(), tiny.get_uuid());
+        assert_eq!(huge.get_uuid(), huge_from_tiny.get_uuid());
+
+        assert_eq!(huge.timestamp, huge_from_tiny.timestamp);
+        assert_eq!(huge.random, huge_from_tiny.random);
+
+        assert_eq!(tiny.get_uuid(), reverted.get_uuid());
+        assert_eq!(tiny.timestamp, reverted.timestamp);
+        assert_eq!(tiny.random, reverted.random);
+    }
+
+    #[test]
+    fn example() {
+        let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        println!("{}", TimeflakeTiny::random().unwrap());
+        println!("{}", TimeflakeTiny::from_values(time, Some(0)).unwrap());
+        println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
+        println!("{}", TimeflakeTiny::from_values(time, None).unwrap());
+    }
 }
