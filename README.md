@@ -5,8 +5,10 @@ SPDX-License-Identifier: CC0-1.0
 -->
 
 # TimeflakeTiny-rs
-
-Timeflake Tiny is a 64-bit sized timebased unique, roughly-ordered and compatible with sqlite. Inspired by original library [timeflake-rs](https://github.com/perillamint/timeflake-rs) that is 128-bit sized.
+[![Build Status](https://github.com/pmnxis/timeflaketiny-rs/workflows/CI/badge.svg)](https://github.com/pmnxis/timeflaketiny-rs/actions)
+[![crates.io](https://img.shields.io/crates/v/timeflake-rs.svg)](https://crates.io/crates/timeflake-rs)
+[![License](https://img.shields.io/github/license/pmnxis/timeflaketiny-rs)](https://github.com/pmnxis/timeflaketiny-rs/blob/master/LICENSES/MIT.txt)
+Timeflake Tiny is a 64-bit sized timebased unique, roughly-ordered and compatible with sqlite. Inspired by original library [timeflake-rs](https://github.com/pmnxis/timeflaketiny-rs) that is 128-bit sized.
 
 # Example code
 ```rs
