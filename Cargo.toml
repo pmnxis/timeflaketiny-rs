@@ -1,5 +1,5 @@
 [package]
-name = "timeflake-rs"
+name = "timeflaketiny-rs"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
@@ -13,4 +13,4 @@ keywords = ["timeflake"]
 uuid = "1.1"
 rand = "0.8"
 custom_error = "1.9"
-timeflake-rs = "0.2.3"
+timeflake-rs = "0.2.4"
